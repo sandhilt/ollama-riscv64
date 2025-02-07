@@ -1,45 +1,33 @@
 {
   description = "Go package";
 
-  # Nixpkgs / NixOS version to use.
-  inputs.nixpkgs.url = "nixpkgs/nixos-24.11";
+  inputs = {
+    # Nixpkgs / NixOS version to use.
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-24.11";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
 
   outputs =
-    { self, nixpkgs }:
-    let
-
-      # to work with older version of flakes
-      lastModifiedDate = self.lastModifiedDate or self.lastModified or "19700101";
-
-      # Generate a user-friendly version number.
-      version = builtins.substring 0 8 lastModifiedDate;
-
-      # System types to support.
-      supportedSystems = [
-        "x86_64-linux"
-        "x86_64-darwin"
-        "aarch64-linux"
-        "aarch64-darwin"
-      ];
-
-      # Helper function to generate an attrset '{ x86_64-linux = f "x86_64-linux"; ... }'.
-      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
-
-      # Nixpkgs instantiated for supported system types.
-      nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
-
-    in
     {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        # to work with older version of flakes
+        lastModifiedDate = self.lastModifiedDate or self.lastModified or "19700101";
 
-      # Provide some binary packages for selected system types.
-      packages = forAllSystems (
-        system:
-        let
-          pkgs = nixpkgsFor.${system};
-        in
-        {
-          nonodo = pkgs.buildGoModule {
-            name = "nonodo";
+        # Generate a user-friendly version number.
+        version = builtins.substring 0 8 lastModifiedDate;
+      in
+      {
+        formatter = pkgs.nixfmt-rfc-style;
+        packages = {
+          ollama = pkgs.buildGoModule {
+            name = "ollama";
             inherit version;
             # In 'nix develop', we don't need a copy of the source tree
             # in the Nix store.
@@ -53,25 +41,16 @@
             # it should be "out-of-band" with other tooling (eg. gomod2nix).
             # To begin with it is recommended to set this, but one must
             # remember to bump this hash when your dependencies change.
-            # vendorHash = pkgs.lib.fakeHash;
-
-            vendorHash = "sha256-pQpattmS9VmO3ZIQUFn66az8GSmB4IvYhTTCFn6SUmo=";
+            vendorHash = pkgs.lib.fakeHash;
           };
 
           # The default package for 'nix build'. This makes sense if the
           # flake provides only one package or there is a clear "main"
           # package.
-          default = self.packages.${system}.nonodo;
-        }
-      );
+          default = self.packages.${system}.ollama;
+        };
 
-      # Add dependencies that are only needed for development
-      devShells = forAllSystems (
-        system:
-        let
-          pkgs = nixpkgsFor.${system};
-        in
-        {
+        devShells = {
           default = pkgs.mkShell {
             buildInputs = with pkgs; [
               go
@@ -79,7 +58,6 @@
               delve
               gcc
               watchexec
-              sqlite
             ];
 
             shellHook = ''
@@ -87,7 +65,7 @@
               [ -e "./nonodo" ] && source <(./nonodo completion bash)
             '';
           };
-        }
-      );
-    };
+        };
+      }
+    );
 }
