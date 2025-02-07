@@ -58,6 +58,7 @@
               delve
               gcc
               watchexec
+              cmake
             ];
 
             shellHook = ''

@@ -24,7 +24,7 @@ ENV CC=clang CXX=clang++
 FROM base-${TARGETARCH} AS base
 ARG CMAKEVERSION
 RUN curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz | tar xz -C /usr/local --strip-components 1
-COPY CMakeLists.txt CMakePresets.json .
+COPY CMakeLists.txt CMakePresets.json ./
 COPY ml/backend/ggml/ggml ml/backend/ggml/ggml
 ENV LDFLAGS=-s
 
@@ -65,7 +65,7 @@ FROM --platform=linux/arm64 nvcr.io/nvidia/l4t-jetpack:${JETPACK5VERSION} AS jet
 ARG CMAKEVERSION
 RUN apt-get update && apt-get install -y curl ccache \
     && curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz | tar xz -C /usr/local --strip-components 1
-COPY CMakeLists.txt CMakePresets.json .
+COPY CMakeLists.txt CMakePresets.json ./
 COPY ml/backend/ggml/ggml ml/backend/ggml/ggml
 RUN --mount=type=cache,target=/root/.ccache \
     cmake --preset 'JetPack 5' \
@@ -76,7 +76,7 @@ FROM --platform=linux/arm64 nvcr.io/nvidia/l4t-jetpack:${JETPACK6VERSION} AS jet
 ARG CMAKEVERSION
 RUN apt-get update && apt-get install -y curl ccache \
     && curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CMAKEVERSION}/cmake-${CMAKEVERSION}-linux-$(uname -m).tar.gz | tar xz -C /usr/local --strip-components 1
-COPY CMakeLists.txt CMakePresets.json .
+COPY CMakeLists.txt CMakePresets.json ./
 COPY ml/backend/ggml/ggml ml/backend/ggml/ggml
 RUN --mount=type=cache,target=/root/.ccache \
     cmake --preset 'JetPack 6' \
